@@ -1,0 +1,27 @@
+version: "3"
+
+tasks:
+  go:build:
+    dir: src
+    vars:
+      OUTPUT_PATH: ./bin/bootstrap
+    env:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: 0
+    sources:
+      - ./**/*.go
+    generates:
+      - "{{ .OUTPUT_PATH }}"
+    cmds:
+      - go build -o {{ .OUTPUT_PATH }}
+
+  go:test:
+    dir: src
+    cmds:
+      - go test ./... -cover
+
+  sam:local:
+    deps: [go:build]
+    cmds:
+      - sam local invoke --event ./events/event.json
