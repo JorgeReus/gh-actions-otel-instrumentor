@@ -1,31 +1,31 @@
-package main
+package github
 
 import "time"
 
-type WorkflowJobConclusion string
-type WorkflowJobStatus string
+type workflowJobConclusion string
+type workflowJobStatus string
 
 const (
-	ConclusionSuccess        WorkflowJobConclusion = "success"
-	ConclusionFailure        WorkflowJobConclusion = "failure"
-	ConclusionNull           WorkflowJobConclusion = "null"
-	ConclusionSkipped        WorkflowJobConclusion = "skipped"
-	ConclusionCancelled      WorkflowJobConclusion = "cancelled"
-	ConclusionActionRequired WorkflowJobConclusion = "action_required"
-	ConclusionNeutral        WorkflowJobConclusion = "neutral"
-	ConclusionTimedOut       WorkflowJobConclusion = "timed_out"
+	conclusionSuccess        workflowJobConclusion = "success"
+	conclusionFailure        workflowJobConclusion = "failure"
+	conclusionNull           workflowJobConclusion = "null"
+	conclusionSkipped        workflowJobConclusion = "skipped"
+	conclusionCancelled      workflowJobConclusion = "cancelled"
+	conclusionActionRequired workflowJobConclusion = "action_required"
+	conclusionNeutral        workflowJobConclusion = "neutral"
+	conclusionTimedOut       workflowJobConclusion = "timed_out"
 
-	StatusQueued     WorkflowJobStatus = "queued"
-	StatusInProgress WorkflowJobStatus = "in_progress"
-	StatusCompleted  WorkflowJobStatus = "completed"
-	StatusWaiting    WorkflowJobStatus = "waiting"
+	statusQueued     workflowJobStatus = "queued"
+	statusInProgress workflowJobStatus = "in_progress"
+	statusCompleted  workflowJobStatus = "completed"
+	statusWaiting    workflowJobStatus = "waiting"
 )
 
-func (s WorkflowJobStatus) String() string {
+func (s workflowJobStatus) String() string {
 	return string(s)
 }
 
-func (s WorkflowJobConclusion) String() string {
+func (s workflowJobConclusion) String() string {
 	return string(s)
 }
 

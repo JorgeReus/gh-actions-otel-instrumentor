@@ -16,6 +16,12 @@ tasks:
     cmds:
       - go build -o {{ .OUTPUT_PATH }}
 
+  go:cover:
+    dir: src
+    cmds:
+      - go test -v ./... -coverprofile=coverage.out
+      - go tool cover -html=coverage.out
+
   go:test:
     dir: src
     cmds:
