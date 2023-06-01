@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	otelimpl "instrumentor/app/otel"
+	"net/http"
 
 	"crypto/hmac"
 	"crypto/sha256"
@@ -14,7 +15,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-
 )
 
 func verifySignature(payloadBody string, secretToken string, signature string) error {
@@ -28,21 +28,21 @@ func verifySignature(payloadBody string, secretToken string, signature string) e
 	return nil
 }
 
-func Instrument(lambdaCtx context.Context, body string, signatureHeader string, webhookSecret string) error {
+func Instrument(lambdaCtx context.Context, body string, signatureHeader string, webhookSecret string) (*WorkflowJobWebhook, error) {
 	var webhook WorkflowJobWebhook
 	err := json.Unmarshal([]byte(body), &webhook)
 
 	if err != nil {
-		return errors.New("Error parsing webhook body")
+		return nil, errors.New("Error parsing webhook body")
 	}
 	if webhook.WorkflowJob.Status != statusCompleted.String() {
-		return errors.New("Only completed events are processed")
+		return nil, errors.New("Only completed events are processed")
 	}
 
 	err = verifySignature(body, webhookSecret, signatureHeader)
 
 	if err != nil {
-		return errors.New("Signatures don't match")
+		return nil, errors.New("Signatures don't match")
 	}
 
 	parentCtx := context.Background()
@@ -54,17 +54,23 @@ func Instrument(lambdaCtx context.Context, body string, signatureHeader string, 
 	defer instrumentWorkflowSpan.End()
 
 	// Instrument the workflow in another trace
-	workflowJobCtx, workflowJobSpan := otelimpl.GetTracerInstance().Start(parentCtx, webhook.WorkflowJob.Name, trace.WithTimestamp(webhook.WorkflowJob.StartedAt))
+	workflowFQN := fmt.Sprintf("%s:%s/%s", webhook.Repository.FullName, webhook.WorkflowJob.WorkflowName, webhook.WorkflowJob.Name)
+	workflowJobCtx, workflowJobSpan := otelimpl.GetTracerInstance().Start(parentCtx, workflowFQN, trace.WithTimestamp(webhook.WorkflowJob.StartedAt))
 	workflowJobSpan.SetAttributes(
+		attribute.String("http.user_agent", "github-actions/WorkflowJob"),
 		attribute.Int64("github.resource.run_id", webhook.WorkflowJob.RunID),
 		attribute.String("github.resource.html_url", webhook.WorkflowJob.HTMLURL),
 		attribute.String("github.resource.runner_name", webhook.WorkflowJob.RunnerName),
 		attribute.String("github.resource.head_branch", webhook.WorkflowJob.HeadBranch),
 		attribute.StringSlice("github.resource.labels", webhook.WorkflowJob.Labels),
+		attribute.Int64("http.status_code", http.StatusOK),
 	)
 
 	if webhook.WorkflowJob.Conclusion != conclusionSuccess.String() {
 		workflowJobSpan.SetStatus(codes.Error, fmt.Sprintf("Workflowjob conclusion was %s", webhook.WorkflowJob.Conclusion))
+		workflowJobSpan.SetAttributes(
+			attribute.Int64("http.status_code", http.StatusNotAcceptable),
+		)
 	}
 
 	defer workflowJobSpan.End(trace.WithTimestamp(webhook.WorkflowJob.CompletedAt))
@@ -82,5 +88,5 @@ func Instrument(lambdaCtx context.Context, body string, signatureHeader string, 
 		span.End(trace.WithTimestamp(step.CompletedAt))
 	}
 
-	return nil
+	return &webhook, nil
 }
