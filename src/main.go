@@ -13,6 +13,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-lambda-go/otellambda/xrayconfig"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/aws/aws-sdk-go-v2/otelaws"
 )
 
 func main() {
@@ -31,24 +32,25 @@ func main() {
 		return nil
 	}()
 
-	cfg, err := config.LoadDefaultConfig(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	secretsProvider := awsimpl.NewAWSSecretsProvider(cfg)
-
-	secrets, err := secretsProvider.GetSecrets(ctx, []string{
-		"gha-instrumentor/webhook-secret",
-	})
-
-	if err != nil {
-		log.Println(err)
-	}
-
 	lambda.Start(
-		otellambda.InstrumentHandler(func(ctx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
-			return awsimpl.Handler(ctx, request, secrets)
+		otellambda.InstrumentHandler(func(lambdaCtx context.Context, request events.LambdaFunctionURLRequest) (events.LambdaFunctionURLResponse, error) {
+			cfg, err := config.LoadDefaultConfig(lambdaCtx)
+			if err != nil {
+				log.Fatal(err)
+			}
+	    otelaws.AppendMiddlewares(&cfg.APIOptions)
+
+			secretsProvider := awsimpl.NewAWSSecretsProvider(cfg)
+
+			secrets, err := secretsProvider.GetSecrets(lambdaCtx, []string{
+				"gha-instrumentor/webhook-secret",
+				"gha-instrumentor/notification-url",
+			})
+
+			if err != nil {
+				log.Fatal(err)
+			}
+			return awsimpl.Handler(lambdaCtx, request, secrets)
 		}, xrayconfig.WithRecommendedOptions(tp)...),
 	)
 }

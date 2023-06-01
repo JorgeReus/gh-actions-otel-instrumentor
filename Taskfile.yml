@@ -2,6 +2,7 @@ version: "3"
 
 tasks:
   go:build:
+    deps: [go:test]
     dir: src
     vars:
       OUTPUT_PATH: ./bin/bootstrap
@@ -24,8 +25,22 @@ tasks:
 
   go:test:
     dir: src
+    sources:
+      - ./**/*.go
+    generates:
+      - "{{ .OUTPUT_PATH }}"
+    vars:
+      OUTPUT_PATH: coverage.out
     cmds:
-      - go test ./... -cover
+      - go mod tidy
+      - go test -v ./... -coverprofile={{ .OUTPUT_PATH }}
+      - go tool cover -func {{ .OUTPUT_PATH }} | grep -F total | awk '{ if ($3 < 90.0) exit 1; else exit 0 }'
+
+  tf:apply:
+    deps: [go:build]
+    dir: terraform
+    cmds:
+      - terraform apply
 
   sam:local:
     deps: [go:build]
