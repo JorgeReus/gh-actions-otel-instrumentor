@@ -1,7 +1,8 @@
 # gh-actions-otel-instrumentor
 
-This project aims to provide a full github actions tracing with notifications without copy-pasting [workflows](https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads?actionType=completed#workflow_job)
+![xray](./.md/xray.png)
 
+This project aims to provide a full github actions open telemetry tracing with notifications without copy-pasting [workflows](https://docs.github.com/en/webhooks-and-events/webhooks/webhook-events-and-payloads?actionType=completed#workflow_job)
 
 ```bash
 .
@@ -36,11 +37,8 @@ If the previous command ran successfully you should see traces in AWS-xray which
 
 ### Testing
 
-We use `testing` package that is built-in in Golang and you can simply run the following command to run our tests:
+We use `testing` package that is built-in in Golang and you can simply run the following command to run our tests: `task go:test`, for coverage html report run `task go:cover`
 
-```shell
-task go:test
-```
 # Appendix
 
 ### Golang installation

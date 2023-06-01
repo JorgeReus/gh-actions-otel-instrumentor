@@ -1,2 +1,5 @@
 .task/
+*.out
 bin/
+.terraform/
+terraform.tfstate*
