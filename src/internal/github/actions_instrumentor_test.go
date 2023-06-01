@@ -94,7 +94,7 @@ func TestInstrument(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := Instrument(context.Background(), tc.event.Body, tc.event.Headers["x-hub-signature-256"], tc.webhookSecret)
+			_, err := Instrument(context.Background(), tc.event.Body, tc.event.Headers["x-hub-signature-256"], tc.webhookSecret)
 			if tc.raiseErr != "" {
 				assert.ErrorContains(t, err, tc.raiseErr)
 			} else {
@@ -104,7 +104,7 @@ func TestInstrument(t *testing.T) {
 	}
 
 	t.Run("Invalid Webhook Body", func(t *testing.T) {
-		err := Instrument(context.Background(), "INVALID_BODY", "TEST_HEADER", "WEBHOOK_SECRET")
+		_, err := Instrument(context.Background(), "INVALID_BODY", "TEST_HEADER", "WEBHOOK_SECRET")
 		assert.ErrorContains(t, err, "Error parsing webhook body")
 	})
 }
