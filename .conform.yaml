@@ -1,0 +1,18 @@
+---
+policies:
+  - type: commit
+    spec:
+      header:
+        length: 89
+        imperative: false
+      body:
+        required: false
+      maximumOfOneCommit: true
+      conventional:
+        types:
+          - feat
+          - docs
+          - fix
+          - test
+          - chore
+        descriptionLength: 72
