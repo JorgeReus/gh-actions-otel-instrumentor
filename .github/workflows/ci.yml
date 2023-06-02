@@ -1,23 +1,55 @@
+---
 name: CI
 
 on:
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run precommit
+        id: precommit
+        run: |
+          pip3 install pre-commit
+          python3 -m pre_commit run --show-diff-on-failure --color=always
+
+      - name: Setup Conform
+        shell: bash
+        run: |
+          curl -sLo conform https://github.com/siderolabs/conform/releases/download/v0.1.0-alpha.26/conform-linux-amd64
+          chmod +x conform
+          sudo mv conform /usr/bin/conform
+
+      - name: Run conform
+        id: conform
+        run: |
+          conform enforce --commit-ref "refs/remotes/origin/main"
+
   CI:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.20.3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.3
 
-    - name: Install Task
-      uses: arduino/setup-task@v1
+      - name: Install Task
+        uses: arduino/setup-task@v1
 
-    - name: Test
-      run: |
-        task go:test
+      - name: Test
+        run: |
+          task go:test
