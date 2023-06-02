@@ -11,6 +11,16 @@ This project aims to provide a full github actions open telemetry tracing with n
 └── template.yaml               <-- SAM template
 ```
 
+## How does this works
+
+```mermaid
+sequenceDiagram
+    github-->>+githubApp(Otel Instrumentor): Send workflow_job event to the supplied webhook url
+    githubApp(Otel Instrumentor)-->>+OTEL Collector: Instruments the event and sends traces via the OTEL golang sdk
+    OTEL Collector-->>+Tracing Backend(AWS Xray): Sends traces
+    githubApp(Otel Instrumentor)-->>+Notification Webhook: Sends webhook notification to the specified url(discord)
+```
+
 ## Requirements
 
 * Propertly configured AWS credentials
@@ -33,7 +43,7 @@ If the previous command ran successfully you should see traces in AWS-xray which
 
 ## Packaging and deployment
 * To package the application run `task go:build`, this will create a `bin` directory with the binary
-* To deploy the lamda function use **TBD** terraform
+* To deploy the lamda function use `task tf:apply` and input the discord webhook URL for notifications
 
 ### Testing
 
@@ -44,3 +54,13 @@ We use `testing` package that is built-in in Golang and you can simply run the f
 ### Golang installation
 
 Please ensure Go 1.20 (where 'x' is the latest version) is installed as per the instructions on the official golang website: https://golang.org/doc/install
+
+## Setup Github App
+1. Go to your github account > Settings > Developer settings > Github Apps > New Github App
+2. Fill the details:
+    - *GitHub App name* With your preferred name
+    - *Homepage URL* Put the lambda url based on the outputs of the terraform apply (i.e. `terraform output -json | jq -j '.url.value'`)
+    - *Webhook* Mark the Active checkbox and fill the Webhook URL input with the same lambda url as before 
+    - *Fill the Webhook Secret* with the value of `terraform output -json | jq -j '.webhook_secret.value'`
+    - *Check enable SSL verification*
+    - *Create the app*
